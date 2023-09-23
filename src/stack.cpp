@@ -4,6 +4,7 @@
 #include <math.h>
 
 #include "stack.h"
+#include "helpers.h"
 
 void stack_ctor(Stack *stk, size_t default_capacity, const char *stk_name, const char *file_name, size_t line, const char *func_name)
 {
@@ -28,7 +29,7 @@ void stack_ctor(Stack *stk, size_t default_capacity, const char *stk_name, const
 void stack_push(Stack *stk, elem_t value)
 {
 	printf("\nSTACK_PUSH LOG:\n");
-	if(stack_verifier(*stk) != 0)
+	if((stk->error_code = stack_verifier(*stk)) != 0)
 	{
 		stk->file_name = __FILE__;
 		stk->func_name = __func__;
@@ -61,7 +62,7 @@ void stack_push(Stack *stk, elem_t value)
 struct Stack_pop_result stack_pop(Stack *stk)
 {
 	printf("\nSTACK_POP LOG:\n");
-	if(stack_verifier(*stk) != 0)
+	if((stk->error_code = stack_verifier(*stk)) != 0)
 	{
 		stk->file_name = __FILE__;
 		stk->func_name = __func__;
@@ -116,31 +117,61 @@ void stack_dtor(Stack *stk)
 	printf("Stack has been destroyed\n");
 }
 
-
-
-bool stack_verifier(Stack stk)
+int stack_verifier(Stack stk)
 {
-	bool ok_ID = 1;
+	int ok_ID = 0;
 	if(stk.left_canary != 0xBADC0FFEE)
-		ok_ID = 0;
+	{
+		ok_ID |= 1;
+	}
+
+	ok_ID = ok_ID << 1;
 	if(stk.right_canary != 0xBADC0FFEE)
-		ok_ID = 0;
-	if(!stk.data)
-		ok_ID = 0;
+	{
+		ok_ID |= 1;
+	}
+
+	ok_ID = ok_ID << 1;
 	if(stk.size > stk.capacity)
-		ok_ID = 0;
+	{
+		ok_ID |= 1;
+	}
+
+	ok_ID = ok_ID << 1;
 	if(stk.data == NULL)
-		ok_ID = 0;
-	if(stk.size <= 0)
-		ok_ID = 0;
+	{
+		ok_ID |= 1;
+	}
+
+	ok_ID = ok_ID << 1;
+	if(stk.size < 0)
+	{
+		ok_ID |= 1;
+	}
+
+	ok_ID = ok_ID << 1;
 	if(stk.capacity < 0)
-		ok_ID = 0;
+	{
+		ok_ID |= 1;
+	}
+
+	ok_ID = ok_ID << 1;
 	if(stk.file_name == NULL)
-		ok_ID = 0;
-	if(stk.func_name)
-		ok_ID = 0;
+	{
+		ok_ID |= 1;
+	}
+
+	ok_ID = ok_ID << 1;
+	if(!stk.func_name)
+	{
+		ok_ID |= 1;
+	}
+
+	ok_ID = ok_ID << 1;
 	if(stk.stk_name == NULL)
-		ok_ID = 0;
+	{
+		ok_ID |= 1;
+	}
 
 	return ok_ID;
 }

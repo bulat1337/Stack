@@ -23,10 +23,11 @@ int main()
 		.file_name = NULL,
 		.func_name = NULL,
 		.line = 0,
+		.error_code = 0,
 	};
 	stack_ctor(&stk, 10, "stk", __FILE__, __LINE__, __func__);
 
-	if(stack_verifier(stk) != 0)
+	if((stk.error_code = stack_verifier(stk)) != 0)
 	{
 		STACK_DUMP(stk);
 	}
