@@ -46,10 +46,7 @@ void stack_push(Stack *stk, elem_t value)
 
 	hash_check_n_count(stk);
 
-	if((stk->error_code = (enum Err_ID)stack_verifier(stk)) != ALL_GOOD)
-	{
-		SMART_DUMP(stk);
-	}
+	
 
 	if(stk->size >= stk->capacity)
 	{
