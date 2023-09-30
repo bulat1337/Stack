@@ -5,6 +5,19 @@
 
 #include "stack.h"
 #include "helpers.h"
+// unit_test1, 2, ...
+//{
+//	struct stack stk
+//	struct stack exp_stk
+//	expected_stack;
+//
+//	ctor(0)
+//	push
+
+//	stk != expected_stk
+//}
+
+
 
 int main()
 {
@@ -14,35 +27,38 @@ int main()
 		.error_code = ALL_GOOD,
 	};
 
-	struct Stack stk =
-	{
-		.left_canary = 0xBADC0FFEE,
-		.capacity = 0,
-		.buf_left_canary = NULL,
-		.data = NULL,
-		.size = 0,
-		.stk_name = NULL,
-		.file_name = NULL,
-		.func_name = NULL,
-		.line = 0,
-		.error_code = ALL_GOOD,
-		.hash_check_value = 0,
-		.right_canary = 0xBADC0FFEE,
-	};
-	stack_ctor(&stk, 10, "stk", __FILE__, __LINE__, __func__);
+	enum Err_ID error_code = ALL_GOOD;
 
-	if((stk.error_code = (enum Err_ID)stack_verifier(&stk)) != ALL_GOOD)
+	struct Stack stk = {};
+	STACK_CTOR(&stk, 10);
+
+	if((error_code = (enum Err_ID)stack_verifier(&stk)) != ALL_GOOD) //явный каст не нужен
+	//copypaste
 	{
-		ACTUALIZED_STACK_DUMP(&stk);
+		ACTUALIZED_STACK_DUMP(&stk, error_code);
 	}
 
-	stack_push(&stk, 1);
+	STACK_PUSH(&stk, 17);
 
 
-	result = stack_pop(&stk);
+	result = STACK_POP(&stk);
 
 
 	stack_dtor(&stk);
 
 	return 0;
 }
+
+/*
+0x1
+0x12
+0x100
+
+bool is_registered[---]
+
+is_registered[0x100] = true;
+
+[0; 1000]
+
+bool is_registred[]
+*/
