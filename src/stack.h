@@ -123,9 +123,12 @@ void stack_dtor(Stack *stk);
 enum Err_ID stack_verifier(const Stack *stk);
 void stack_buf_realloc(Stack *stk);
 void ptr_realloc_redirect(Stack *stk);
-void hash_count(Stack *stk);
+size_t hash_count(Stack *stk);
 void hash_check_n_count(Stack *stk);
 void stack_dump(const Stack *stk, const char *stk_name, enum Err_ID error_code);
+
+void hash_data_count(Stack *stk);
+void hash_data_check_n_count(Stack *stk);
 
 
 #endif

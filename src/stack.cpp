@@ -45,7 +45,7 @@ enum Err_ID stack_ctor( Stack *stk, size_t starter_capacity,
 	stk->line = line;
 
 	stk->right_canary = canary_value;
-	hash_count(stk); //stk->check_hash_value = hash_count(stk)
+	stk->hash_check_value = hash_count((Stack *)stk); //stk->hash_check_value = hash_count(stk)
 
 	return	ALL_GOOD;
 }
@@ -97,7 +97,7 @@ enum Err_ID stack_push( Stack *stk, elem_t value,
 	printf("\nsize = %lu, capacity = %lu", stk->size, stk->capacity);
 	printf("\n");
 
-	hash_count(stk);
+	stk->hash_check_value = hash_count((Stack *)stk);
 
 	return error_code;
 }
@@ -158,7 +158,7 @@ struct Stack_pop_result stack_pop(  Stack *stk, const char *file_name,
 	printf("\nsize = %lu, capacity = %lu", stk->size, stk->capacity);
 	printf("\n");
 
-	hash_count(stk);
+	stk->hash_check_value = hash_count((Stack *)stk);
 
 	return result;
 }
@@ -201,13 +201,15 @@ enum Err_ID stack_verifier(const Stack *stk)
 	return (enum Err_ID)error_ID;
 }
 
-void hash_count(Stack *stk) //void * //hash должен быть применим к другим типам данных
+size_t hash_count(void *stk) //void * //hash должен быть применим к другим типам данных
 {
-	stk->hash_check_value = 0;
+	size_t hash_check_value = 0;
 	for(size_t stk_elem_ID = 0; stk_elem_ID < sizeof(stk); stk_elem_ID++)
 	{
-		stk->hash_check_value += (unsigned long)*((char*)(stk) + stk_elem_ID);
+		hash_check_value += (size_t)*((char*)stk + stk_elem_ID);
 	}
+
+	return hash_check_value;
 }
 
 void hash_data_count(Stack *stk)
