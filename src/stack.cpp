@@ -24,6 +24,7 @@ enum Err_ID stack_ctor( Stack *stk, size_t starter_capacity,
 
 	stk->capacity = starter_capacity;
 
+
 	size_t data_size = sizeof(elem_t) * stk->capacity;
 	size_t alignment_space = sizeof(canary_t) - data_size % sizeof(canary_t);
 	stk->data = (elem_t *)calloc(1, data_size + 2 * sizeof(canary_t) + alignment_space);
@@ -40,29 +41,29 @@ enum Err_ID stack_ctor( Stack *stk, size_t starter_capacity,
 	ptr_realloc_redirect(stk);
 
 	stk->size = 0;
-	stk->file_name = file_name;
-	stk->func_name = func_name;
-	stk->line = line;
+	stk->log_file = fopen("log_file.txt", "w");
+
+	update_stack_position(stk, file_name, line, func_name);
 
 	stk->right_canary = canary_value;
-	stk->hash_check_value = hash_count((Stack *)stk); //stk->hash_check_value = hash_count(stk)
 
+	ultimate_stack_hash_count(stk);
+
+	fprintf(stk->log_file, "*Stack has been created*\n");
 	return	ALL_GOOD;
 }
 
 enum Err_ID stack_push( Stack *stk, elem_t value,
 						const char *file_name, const char *func_name, size_t line)
 {
-	LOG(STACK_PUSH);
+	LOG(stk);
+
+	hash_check_n_count(stk);
+	hash_data_check_n_count(stk);
 
 	enum Err_ID error_code;
 
-	stk->file_name = file_name; //copypaste можно макрос?
-	stk->func_name = func_name;
-	stk->line = line;
-
-	hash_check_n_count(stk);
-
+	update_stack_position(stk, file_name, line, func_name);
 
 	#ifdef DEBUG
 		if((error_code = stack_verifier(stk)) != ALL_GOOD)
@@ -78,11 +79,18 @@ enum Err_ID stack_push( Stack *stk, elem_t value,
 
 	if(stk->size >= stk->capacity)
 	{
-		stk->capacity *= 2; //сделать возможным расширение с нуля
+		if(stk->capacity == 0)
+		{
+			stk->capacity += 5;
+		}
+		else
+		{
+			stk->capacity *= 2;
+		}
 
-		stack_buf_realloc(stk);//редирект в реаллок
+		stack_buf_realloc(stk);
 
-		printf("new capacity: expanded\n");
+		fprintf(stk->log_file, "new capacity: expanded\n");
 	}
 	else
 	{
@@ -90,14 +98,9 @@ enum Err_ID stack_push( Stack *stk, elem_t value,
 		stk->size++;
 	}
 
-	for(size_t i = 0; i < stk->capacity; i++)//copyp
-	{
-		printf("[%lu]%d ", i, (stk->data)[i]);
-	}
-	printf("\nsize = %lu, capacity = %lu", stk->size, stk->capacity);
-	printf("\n");
+	print_stack_elems(stk);
 
-	stk->hash_check_value = hash_count((Stack *)stk);
+	ultimate_stack_hash_count(stk);
 
 	return error_code;
 }
@@ -105,20 +108,19 @@ enum Err_ID stack_push( Stack *stk, elem_t value,
 struct Stack_pop_result stack_pop(  Stack *stk, const char *file_name,
 									const char *func_name, size_t line)
 {
-	LOG(STACK_POP);//func__
+	LOG(stk);
+
+	hash_check_n_count(stk);
+	hash_data_check_n_count(stk);
 
 	struct Stack_pop_result result = {};
 
-	stk->file_name = file_name; //copypaste
-	stk->func_name = func_name;
-	stk->line = line;
-
-	hash_check_n_count(stk);
+	update_stack_position(stk, file_name, line, func_name);
 
 	#ifdef DEBUG
 		if((result.error_code = stack_verifier(stk)) != ALL_GOOD)
 		{
-			SMART_DUMP(stk, result.error_code); //smart_dump(stk, __LINE__);
+			SMART_DUMP(stk, result.error_code);
 		}
 	#endif
 
@@ -142,23 +144,19 @@ struct Stack_pop_result stack_pop(  Stack *stk, const char *file_name,
 	result.deleted_element = (stk->data)[stk->size];
 	if(stk->size <= stk->capacity / (2 * 2))
 	{
-		printf("Here is why capacity is going to be shrinked:\n"); //fpritf all log
-		printf("\t size[%lu] <= capacity[%lu]\n", stk->size, stk->capacity / (2 * 2));
+		fprintf(stk->log_file, "Here is why capacity is going to be shrinked:\n");
+		fprintf(stk->log_file, "\t size[%lu] <= (capacity / 4)[%lu]\n",
+								stk->size, stk->capacity / (2 * 2));
 		stk->capacity /= 2;
 
 		stack_buf_realloc(stk);
 
-		printf("new capacity: shrinked\n");
+		fprintf(stk->log_file, "new capacity: shrinked\n");
 	}
 
-	for(size_t i = 0; i < stk->capacity; i++) //copypaste log
-	{
-		printf("[%lu]%d ", i, (stk->data)[i]);
-	}
-	printf("\nsize = %lu, capacity = %lu", stk->size, stk->capacity);
-	printf("\n");
+	print_stack_elems(stk);
 
-	stk->hash_check_value = hash_count((Stack *)stk);
+	ultimate_stack_hash_count(stk);
 
 	return result;
 }
@@ -166,13 +164,15 @@ struct Stack_pop_result stack_pop(  Stack *stk, const char *file_name,
 void stack_dtor(Stack *stk)
 {
 	hash_check_n_count(stk);
-	LOG(STACK_DTOR);
+	hash_data_check_n_count(stk);
+
+	LOG(stk);
 	free(stk->buf_left_canary);
 	stk->file_name = NULL;
 	stk->func_name = NULL;
 	stk->size = 0;
 	stk->capacity = 0;
-	printf("Stack has been destroyed\n");
+	fprintf(stk->log_file, "*Stack has been destroyed*\n");
 }
 
 enum Err_ID stack_verifier(const Stack *stk)
@@ -188,7 +188,6 @@ enum Err_ID stack_verifier(const Stack *stk)
 	CHECK_CONDITION(stk->size < 0, SIZE_ZERO);
 	CHECK_CONDITION(stk->size > stk->capacity, SIZE_IS_GREATER);
 	CHECK_CONDITION(stk->data == NULL, DATA_NULL_PTR);
-	CHECK_CONDITION(stk->capacity <= 0, CAP_ZERO); //такая проверка не нужнаБ ситуация с расширением нулевого стека корректна
 	CHECK_CONDITION(stk->file_name == NULL, FILE_NAME_NULL_PTR);
 	CHECK_CONDITION(stk->func_name == NULL, FUNC_NAME_NULL_PTR);
 	CHECK_CONDITION(stk->left_canary != canary_value, L_CANARY_DIED);
@@ -201,35 +200,24 @@ enum Err_ID stack_verifier(const Stack *stk)
 	return (enum Err_ID)error_ID;
 }
 
-size_t hash_count(void *stk) //void * //hash должен быть применим к другим типам данных
+size_t hash_count(void *object, size_t hash_object_size)
 {
 	size_t hash_check_value = 0;
-	for(size_t stk_elem_ID = 0; stk_elem_ID < sizeof(stk); stk_elem_ID++)
+	for(size_t obj_elem_ID = 0; obj_elem_ID < hash_object_size; obj_elem_ID++)
 	{
-		hash_check_value += (size_t)*((char*)stk + stk_elem_ID);
+		hash_check_value += (size_t) *((char*)object + obj_elem_ID);
 	}
 
 	return hash_check_value;
 }
 
-void hash_data_count(Stack *stk)
-{
-	stk->hash_data_check_value = 0;
-	for(size_t stk_elem_ID = 0; stk_elem_ID < sizeof(stk->data); stk_elem_ID++)
-	{
-		stk->hash_data_check_value+= (unsigned long)*((char*)(&stk->data) + stk_elem_ID);
-	}
-}
-
 void hash_data_check_n_count(Stack *stk)
 {
+	LOG(stk);
 	size_t temp_hash_data_check_value = stk->hash_data_check_value;
-
 	stk->hash_data_check_value = 0;
-	for(size_t stk_elem_ID = 0; stk_elem_ID < sizeof(stk->data); stk_elem_ID++) //sizeof(stk->data) -> capacity
-	{//copypaste
-		stk->hash_data_check_value+= (unsigned long)*((char*)(stk->data) + stk_elem_ID);
-	}
+
+	stk->hash_data_check_value = hash_count(stk->data, stk->capacity);
 
 	if(stk->hash_data_check_value != temp_hash_data_check_value)
 	{
@@ -241,26 +229,32 @@ void hash_data_check_n_count(Stack *stk)
 
 		SMART_DUMP(stk, error_code)
 	}
+	fprintf(stk->log_file ,"hash_data_check_value[%lu] == temp_hash_data_check_value[%lu]\n",
+					stk->hash_data_check_value, temp_hash_data_check_value);
 }
 
 void hash_check_n_count(Stack *stk)
 {
 	size_t temp_hash_check_value = stk->hash_check_value;
+	size_t temp_hash_data_check_value = stk->hash_data_check_value;
 	stk->hash_check_value = 0;
-	for(size_t stk_elem_ID = 0; stk_elem_ID < sizeof(stk); stk_elem_ID++)
-	{
-		stk->hash_check_value += (unsigned long)*((char*)(stk) + stk_elem_ID);
-	}
-	if(stk->hash_check_value != temp_hash_check_value)
+	stk->hash_data_check_value = 0;
+	size_t new_hash_check_value = hash_count(stk, sizeof(*stk));
+	stk->hash_check_value = new_hash_check_value;
+	stk->hash_data_check_value = temp_hash_data_check_value;
+
+	if(new_hash_check_value != temp_hash_check_value)
 	{
 		enum Err_ID error_code = HASH_AINT_RIGHT;
 		#ifdef DEBUG
-			fprintf(stderr ,"hash_check_value[%lu] != temp_hash_check_value[%lu]\n",
-					stk->hash_check_value, temp_hash_check_value);
+			fprintf(stderr ,"new_hash_check_value[%lu] != temp_hash_check_value[%lu]\n",
+					new_hash_check_value, temp_hash_check_value);
 		#endif
 
 		SMART_DUMP(stk, error_code)
 	}
+	fprintf(stk->log_file ,"new_hash_check_value[%lu] != temp_hash_check_value[%lu]\n",
+					new_hash_check_value, temp_hash_check_value);
 }
 
 void stack_buf_realloc(Stack *stk)
@@ -289,7 +283,7 @@ void ptr_realloc_redirect(Stack *stk)
 
 void stack_dump(const Stack *stk, const char *stk_name, enum Err_ID error_code)
 {
-	printf( "%s[%p] is not ok\n"
+	printf( "%s[%p] dump:\n"
 			"left_canary[%p] = %llX\nright_canary[%p] = %llX\n"
 			"buf_left_canary[%p] = %llX\nbuf_right_canary[%p] = %llX\n"
 			"size = %lu\ncapacity = %lu\n"
@@ -308,4 +302,59 @@ void stack_dump(const Stack *stk, const char *stk_name, enum Err_ID error_code)
 	}
 
 	show_bits(error_code);
+}
+
+void print_stack_elems(Stack *stk)
+{
+	for(size_t i = 0; i < stk->capacity; i++)
+	{
+		fprintf(stk->log_file, "[%lu]%d ", i, (stk->data)[i]);
+	}
+	fprintf(stk->log_file, "\nsize = %lu, capacity = %lu", stk->size, stk->capacity);
+	fprintf(stk->log_file, "\n");
+}
+
+void ultimate_stack_hash_count(Stack *stk)
+{
+	stk->hash_check_value = 0;
+	stk->hash_data_check_value = 0;
+
+	size_t new_hash_check_value = hash_count(stk, sizeof(*stk));
+	size_t new_hash_data_check_value = hash_count(stk->data, stk->capacity);
+
+	stk->hash_check_value = new_hash_check_value;
+	stk->hash_data_check_value = new_hash_data_check_value;
+}
+
+void update_stack_position( Stack *stk, const char *file_name,
+							size_t line, const char *func_name)
+{
+	stk->file_name = file_name;
+	stk->func_name = func_name;
+	stk->line = line;
+}
+
+bool unit_test_1(Stack *stk)
+{
+	STACK_CTOR(stk, 0);
+	STACK_PUSH(stk, 666);
+	STACK_PUSH(stk, 666);
+	STACK_POP(stk);
+
+	if((*(stk->buf_left_canary) == buf_canary_value) &&
+	   (*(stk->buf_right_canary) == buf_canary_value) &&
+	   (stk->capacity == 2) &&
+	   ((stk->data)[0] == 666) &&
+	   (stk->left_canary == canary_value) &&
+	   (stk->right_canary == canary_value) &&
+	   (stk->size == 0))
+	{
+		stack_dtor(stk);
+		return 1;
+	}
+	else
+	{
+		stack_dtor(stk);
+		return 0;
+	}
 }

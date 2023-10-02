@@ -1,43 +1,9 @@
 #ifndef STACK_H
 #define STACK_H
 
-#define CANARY_PROTECTION_ON
-
 #define DEBUG
 
-#ifdef CANARY_PROTECTION_ON
-	#define IF_DEFINED_CANARY(TODO) TODO
-#else
-	#define IF_DEFINED_CANARY(TODO)
-#endif
-
-#define STACK_DUMP(stk, error_code) printf("%s[%p] is not ok\n"											\
-								"left_canary[%p] = %llX"                  \
-							    "\nright_canary[%p] = %llX\nbuf_left_canary[%p] = %llX\n"   \
-								"buf_right_canary[%p] = %llX\n"							\
-								"size = %lu\ncapacity = %lu\n"								\
-								"data addres = %p\nfunction: %s\nline: %lu\nfile: %s\n",	\
-								#stk, &(stk),												\
-								&(stk).left_canary,						\
-								(stk).left_canary,&(stk).right_canary, (stk).right_canary,	\
-								(stk).buf_left_canary, *(stk).buf_left_canary,				\
-								(stk).buf_right_canary, *(stk).buf_right_canary,			\
-								(stk).size, (stk).capacity, (stk).data,						\
-								(stk).func_name, (stk).line, (stk).file_name);				\
-								for(size_t stk_ID = 0; stk_ID < (stk).capacity; stk_ID++)	\
-								{															\
-									printf("[%lu] = %d\n", stk_ID, (stk).data[stk_ID]);		\
-								}															\
-								show_bits(error_code);
-
-#define ACTUALIZED_STACK_DUMP(stk, error_code)\
-									(stk)->file_name = __FILE__;\
-									(stk)->func_name = __func__;\
-									(stk)->line = __LINE__;\
-									STACK_DUMP(*(stk), error_code);\
-									exit(EXIT_FAILURE);
-
-#define LOG(func_name)printf("\n%s LOG:\n", #func_name) //log file в стек
+#define LOG(stk) fprintf((stk)->log_file ,"\n%s LOG:\n", __func__)
 
 #define SMART_DUMP(stk, error_code)\
 	if((stk) == NULL)\
@@ -59,30 +25,23 @@ typedef unsigned long long canary_t;
 
 const canary_t canary_value = 0xBADC0FFEE;
 const canary_t buf_canary_value = 0xBAD;
-//macros
-//case ALL_GOOD:
-//	printf("ALL_GOOD");
-//	break;
-
 
 enum Err_ID
 {
-	ALL_GOOD = 0, //выровнить
-	SIZE_ZERO = 1 << 0,
-	SIZE_IS_GREATER = 1 << 1,
-	DATA_NULL_PTR = 1 << 2,
-	CAP_ZERO = 1 << 3,
-	FILE_NAME_NULL_PTR = 1 << 4,
-	FUNC_NAME_NULL_PTR = 1 << 5,
-	DATA_HASH_AINT_RIGHT = 1 << 6,
-	L_CANARY_DIED = 1 << 7,
-	R_CANARY_DIED = 1 << 8,
-	L_BUF_CANARY_DIED = 1 << 9,
-	R_BUF_CANARY_DIED = 1 << 10,
-	STK_NULL_PTR = 1 << 11,
-	NOT_ENOUGH_MEM = 1 << 12,
-	HASH_AINT_RIGHT = 1 << 13,
-
+	ALL_GOOD 			 = 0,
+	SIZE_ZERO 			 = 1 << 0,
+	SIZE_IS_GREATER		 = 1 << 1,
+	DATA_NULL_PTR		 = 1 << 2,
+	FILE_NAME_NULL_PTR	 = 1 << 3,
+	FUNC_NAME_NULL_PTR	 = 1 << 4,
+	DATA_HASH_AINT_RIGHT = 1 << 5,
+	L_CANARY_DIED		 = 1 << 6,
+	R_CANARY_DIED		 = 1 << 7,
+	L_BUF_CANARY_DIED	 = 1 << 8,
+	R_BUF_CANARY_DIED	 = 1 << 9,
+	STK_NULL_PTR 		 = 1 << 10,
+	NOT_ENOUGH_MEM		 = 1 << 11,
+	HASH_AINT_RIGHT		 = 1 << 12,
 };
 
 
@@ -105,6 +64,7 @@ struct Stack
 	const char *file_name;
 	const char *func_name;
 	size_t line;
+	FILE *log_file;
 
 	size_t hash_check_value;
 	size_t hash_data_check_value;
@@ -123,12 +83,15 @@ void stack_dtor(Stack *stk);
 enum Err_ID stack_verifier(const Stack *stk);
 void stack_buf_realloc(Stack *stk);
 void ptr_realloc_redirect(Stack *stk);
-size_t hash_count(Stack *stk);
+size_t hash_count(void *stk, size_t hash_object_size);
 void hash_check_n_count(Stack *stk);
-void stack_dump(const Stack *stk, const char *stk_name, enum Err_ID error_code);
-
-void hash_data_count(Stack *stk);
 void hash_data_check_n_count(Stack *stk);
+void stack_dump(const Stack *stk, const char *stk_name, enum Err_ID error_code);
+void print_stack_elems(Stack *stk);
+void ultimate_stack_hash_count(Stack *stk);
+void update_stack_position( Stack *stk, const char *file_name,
+							size_t line, const char *func_name);
+bool unit_test_1(Stack *stk);
 
 
 #endif

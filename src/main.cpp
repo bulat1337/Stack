@@ -27,24 +27,15 @@ int main()
 		.error_code = ALL_GOOD,
 	};
 
+	struct Stack stk = {};
 	enum Err_ID error_code = ALL_GOOD;
 
-	struct Stack stk = {};
-	STACK_CTOR(&stk, 10);
+	//STACK_CTOR(&stk, 0);
+	//STACK_PUSH(&stk, 666);
+	//result = STACK_POP(&stk);
+	//stack_dtor(&stk);
 
-	if((error_code = (enum Err_ID)stack_verifier(&stk)) != ALL_GOOD) //явный каст не нужен
-	//copypaste
-	{
-		ACTUALIZED_STACK_DUMP(&stk, error_code);
-	}
-
-	STACK_PUSH(&stk, 17);
-
-
-	result = STACK_POP(&stk);
-
-
-	stack_dtor(&stk);
+	printf("%d", unit_test_1(&stk));
 
 	return 0;
 }
