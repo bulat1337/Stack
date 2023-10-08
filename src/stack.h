@@ -148,8 +148,8 @@ void set_data_n_canary_ptrs(Stack *stk);
 
 #ifdef HASH_PROTECTION
 	size_t hash_count(void *stk, size_t hash_object_size);
-	enum Err_ID ultimate_hash_check_n_count(Stack *stk);
-	void ultimate_stack_hash_count(Stack *stk);
+	enum Err_ID hash_check_n_count(Stack *stk);
+	void stack_hash_count(Stack *stk);
 #endif
 
 

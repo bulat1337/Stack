@@ -78,7 +78,7 @@ enum Err_ID stack_ctor( Stack *stk, size_t starter_capacity
 	#endif
 
 	#ifdef HASH_PROTECTION
-		ultimate_stack_hash_count(stk);
+		stack_hash_count(stk);
 	#endif
 
 	#ifdef LOGGING
@@ -109,7 +109,7 @@ enum Err_ID stack_push( Stack *stk, elem_t value
 	#endif
 
 	#ifdef HASH_PROTECTION
-		ultimate_hash_check_n_count(stk);
+		hash_check_n_count(stk);
 	#endif
 
 	enum Err_ID error_code = ALL_GOOD;
@@ -149,7 +149,7 @@ enum Err_ID stack_push( Stack *stk, elem_t value
 	stk->size++;
 
 	#ifdef HASH_PROTECTION
-		ultimate_stack_hash_count(stk);
+		stack_hash_count(stk);
 	#endif
 
 	#ifdef DEBUG
@@ -175,7 +175,7 @@ struct Stack_pop_result stack_pop(  Stack *stk
 	#endif
 
 	#ifdef HASH_PROTECTION
-		ultimate_hash_check_n_count(stk);
+		hash_check_n_count(stk);
 	#endif
 
 	struct Stack_pop_result result = {};
@@ -224,7 +224,7 @@ struct Stack_pop_result stack_pop(  Stack *stk
 	}
 
 	#ifdef HASH_PROTECTION
-		ultimate_stack_hash_count(stk);
+		stack_hash_count(stk);
 	#endif
 
 	#ifdef DEBUG
@@ -245,7 +245,7 @@ enum Err_ID stack_dtor(Stack *stk)
 	#endif
 
 	#ifdef HASH_PROTECTION
-		ultimate_hash_check_n_count(stk);
+		hash_check_n_count(stk);
 	#endif
 
 	enum Err_ID error_code = ALL_GOOD;
@@ -353,7 +353,7 @@ size_t hash_count(void *object, size_t hash_object_size)
 	return hash_check_value;
 }
 
-void ultimate_stack_hash_count(Stack *stk)
+void stack_hash_count(Stack *stk)
 {
 	stk->hash_check_value = 0;
 	stk->hash_data_check_value = 0;
@@ -365,7 +365,7 @@ void ultimate_stack_hash_count(Stack *stk)
 	stk->hash_data_check_value = new_hash_data_check_value;
 }
 
-enum Err_ID ultimate_hash_check_n_count(Stack *stk)
+enum Err_ID hash_check_n_count(Stack *stk)
 {
 	#ifdef LOGGING
 		LOG(stk);
