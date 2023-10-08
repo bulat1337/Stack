@@ -30,12 +30,23 @@ int main()
 	struct Stack stk = {};
 	enum Err_ID error_code = ALL_GOOD;
 
-	//STACK_CTOR(&stk, 0);
-	//STACK_PUSH(&stk, 666);
-	//result = STACK_POP(&stk);
-	//stack_dtor(&stk);
+	#ifndef DEBUG
+	stack_ctor(&stk, 10);
+	stack_push(&stk, 666);
+	result = stack_pop(&stk);
+	stack_dtor(&stk);
+	#else
+	STACK_CTOR(&stk, 0);
+	STACK_PUSH(&stk, 666.7);
+	STACK_PUSH(&stk, 667);
+	STACK_PUSH(&stk, 668);
+	STACK_PUSH(&stk, 669);
+	STACK_PUSH(&stk, 670);
+	result = STACK_POP(&stk);
+	stack_dtor(&stk);
+	#endif
 
-	printf("%d", unit_test_1(&stk));
+
 
 	return 0;
 }
