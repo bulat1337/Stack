@@ -59,7 +59,7 @@ enum Err_ID stack_ctor( Stack *stk, size_t starter_capacity
 		return	NOT_ENOUGH_MEM;
 	}
 	#ifdef CANARY_PROTECTION
-		ptr_realloc_redirect(stk);
+		set_data_n_canary_ptrs(stk);
 	#endif
 
 	stk->size = 0;
@@ -70,7 +70,7 @@ enum Err_ID stack_ctor( Stack *stk, size_t starter_capacity
 	}
 
 	#ifdef DEBUG
-		update_stack_position(stk, file_name, line, func_name);
+		update_stack_invocation_position(stk, file_name, line, func_name);
 	#endif
 
 	#ifdef CANARY_PROTECTION
@@ -115,7 +115,7 @@ enum Err_ID stack_push( Stack *stk, elem_t value
 	enum Err_ID error_code = ALL_GOOD;
 
 	#ifdef DEBUG
-		update_stack_position(stk, file_name, line, func_name);
+		update_stack_invocation_position(stk, file_name, line, func_name);
 	#endif
 
 	if((error_code = stack_verifier(stk)) != ALL_GOOD)
@@ -131,11 +131,11 @@ enum Err_ID stack_push( Stack *stk, elem_t value
 	{
 		if(stk->capacity == 0)
 		{
-			stk->capacity += 5;
+			stk->capacity += stack_expantion_size_from_zero;
 		}
 		else
 		{
-			stk->capacity *= 2;
+			stk->capacity *= stack_reformation_coeff;
 		}
 
 		stack_buf_realloc(stk);
@@ -181,7 +181,7 @@ struct Stack_pop_result stack_pop(  Stack *stk
 	struct Stack_pop_result result = {};
 
 	#ifdef DEBUG
-		update_stack_position(stk, file_name, line, func_name);
+		update_stack_invocation_position(stk, file_name, line, func_name);
 	#endif
 
 	if((result.error_code = stack_verifier(stk)) != ALL_GOOD)
@@ -207,14 +207,15 @@ struct Stack_pop_result stack_pop(  Stack *stk
 	(stk->size)--;
 	result.deleted_element = (stk->data)[stk->size];
 
-	if(stk->size <= stk->capacity / (2 * 2)) //2 -> header const
+	if(stk->size <= stk->capacity / (stack_reformation_coeff * stack_reformation_coeff))
 	{
 		#ifdef LOGGING
 			fprintf(stk->log_file, "Here is why capacity is going to be shrinked:\n");
 			fprintf(stk->log_file, "\t size[%lu] <= (capacity / 4)[%lu]\n",
-									stk->size, stk->capacity / (2 * 2));
+									stk->size, stk->capacity /
+									(stack_reformation_coeff * stack_reformation_coeff));
 		#endif
-		stk->capacity /= 2; //2 -> header const
+		stk->capacity /= stack_reformation_coeff;
 
 		stack_buf_realloc(stk);
 		#ifdef LOGGING
@@ -406,7 +407,7 @@ enum Err_ID ultimate_hash_check_n_count(Stack *stk)
 }
 #endif
 
-enum Err_ID stack_buf_realloc(Stack *stk) //return value not enough mem
+enum Err_ID stack_buf_realloc(Stack *stk)
 {
 	enum Err_ID error_code = ALL_GOOD;
 
@@ -426,14 +427,14 @@ enum Err_ID stack_buf_realloc(Stack *stk) //return value not enough mem
 	}
 
 	#ifdef CANARY_PROTECTION
-		ptr_realloc_redirect(stk);
+		set_data_n_canary_ptrs(stk);
 	#endif
 
 	return error_code;
 }
 
 #ifdef CANARY_PROTECTION
-void ptr_realloc_redirect(Stack *stk) //rename расставить указатели
+void set_data_n_canary_ptrs(Stack *stk)
 {
 	size_t data_size = sizeof(elem_t) * stk->capacity;
 	size_t alignment_space = sizeof(canary_t) - data_size % sizeof(canary_t);
@@ -531,13 +532,13 @@ void stack_dump(const Stack *stk, const char *stk_name, enum Err_ID error_code)
 		}
 
 		fprintf(log_file, "error byte code: ");
-		show_bits(error_code, log_file); //нормально обработать ошибки
+		show_bits(error_code, log_file);
 	}
 }
 #endif
 
 #ifdef DEBUG
-void update_stack_position( Stack *stk, const char *file_name, // reanme место вызова
+void update_stack_invocation_position( Stack *stk, const char *file_name,
 							size_t line, const char *func_name)
 {
 	stk->file_name = file_name;

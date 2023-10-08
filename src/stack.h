@@ -48,6 +48,8 @@ typedef double elem_t;
 	const canary_t buf_canary_value = 0xBAD;
 #endif
 
+const size_t stack_reformation_coeff = 2;
+const size_t stack_expantion_size_from_zero = 5;
 const elem_t DATA_POIZON = 666.666666;
 
 enum Err_ID
@@ -142,7 +144,7 @@ struct Stack_pop_result stack_pop(  Stack *stk
 enum Err_ID stack_dtor(Stack *stk);
 enum Err_ID stack_verifier(const Stack *stk);
 enum Err_ID stack_buf_realloc(Stack *stk);
-void ptr_realloc_redirect(Stack *stk);
+void set_data_n_canary_ptrs(Stack *stk);
 
 #ifdef HASH_PROTECTION
 	size_t hash_count(void *stk, size_t hash_object_size);
@@ -162,7 +164,7 @@ void print_data_elems(const Stack *stk, FILE *log_file);
 
 #ifdef DEBUG
 	void stack_dump(const Stack *stk, const char *stk_name, enum Err_ID error_code);
-	void update_stack_position( Stack *stk,
+	void update_stack_invocation_position( Stack *stk,
 								const char *file_name,
 								size_t line,
 								const char *func_name);
