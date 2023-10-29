@@ -17,8 +17,6 @@ enum Err_ID stack_ctor( Stack *stk, size_t starter_capacity
 {
 	enum Err_ID error_code = ALL_GOOD;
 
-	// как оптимальнее всего организовать strncat??
-
 	#ifdef LOGGING
 		#ifdef DEBUG
 			stk->log_file = fopen(stk_name, "w");
@@ -342,6 +340,7 @@ enum Err_ID stack_verifier(const Stack *stk)
 }
 
 #ifdef HASH_PROTECTION
+
 size_t hash_count(void *object, size_t hash_object_size)
 {
 	size_t hash_check_value = 0;
@@ -470,6 +469,16 @@ void stack_dump(const Stack *stk, const char *stk_name, enum Err_ID error_code)
 			fprintf(log_file, "\n");\
 		}\
 
+	const enum Err_ID error_code_v = error_code;
+
+		// switch(SIZE_ZERO)
+		// {
+		// 	case (SIZE_ZERO):
+		// 		ERROR_CHECK(SIZE_ZERO);
+		// 	case (SIZE_IS_GREATER):
+		// 		ERROR_CHECK(SIZE_IS_GREATER);
+		// }
+
 		ERROR_CHECK(SIZE_ZERO);
 		ERROR_CHECK(SIZE_IS_GREATER);
 		ERROR_CHECK(DATA_NULL_PTR);
@@ -501,11 +510,11 @@ void stack_dump(const Stack *stk, const char *stk_name, enum Err_ID error_code)
 			fatal_error = stderr;
 		}
 
-		fprintf(fatal_error, "Stack[%p] address is NULL\n", stk);
+		fprintf(fatal_error, "Stack[%p] address is NULL\n", stk); //printf для stk->log_file
 	}
 	else
 	{
-		DUMP_W_COND(stk_name != NULL, "%s[%p] dump:\n", stk_name, (stk)); // после макросов можно не ставить ;?????
+		DUMP_W_COND(stk_name != NULL, "%s[%p] dump:\n", stk_name, (stk));
 		#ifdef CANARY_PROTECTION
 		DUMP_W_COND(&(stk->left_canary) != NULL, "left_canary[%p] = %llX\n", &(stk->left_canary),
 																			   stk->left_canary);
@@ -516,11 +525,11 @@ void stack_dump(const Stack *stk, const char *stk_name, enum Err_ID error_code)
 		DUMP_W_COND(stk->buf_right_canary != NULL, "buf_right_canary[%p] = %llX\n",
 													stk->buf_right_canary, *(stk->buf_left_canary));
 		#endif
-		DUMP_W_COND(&(stk->size) != NULL, "size = %lu\n", stk->size);
+		DUMP_W_COND(&(stk->size)     != NULL, "size = %lu\n",     stk->size);
 		DUMP_W_COND(&(stk->capacity) != NULL, "capacity = %lu\n", stk->capacity);
-		DUMP_W_COND(stk->func_name != NULL, "function: %s\n", stk->func_name);
-		DUMP_W_COND(&(stk->line) != NULL, "line: %lu\n", stk->line);
-		DUMP_W_COND(stk->file_name != NULL, "file: %s\n", stk->file_name);
+		DUMP_W_COND(stk->func_name   != NULL, "function: %s\n",   stk->func_name);
+		DUMP_W_COND(&(stk->line)     != NULL, "line: %lu\n",      stk->line);
+		DUMP_W_COND(stk->file_name   != NULL, "file: %s\n",       stk->file_name);
 		fprintf(log_file, "data addres = %p\n", stk->data);
 		if((&(stk->capacity) != NULL) && (stk->data != NULL))
 		{
